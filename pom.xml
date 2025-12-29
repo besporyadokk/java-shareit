@@ -118,7 +118,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>10.3.0</version>
+                            <version>10.3</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -245,10 +245,4 @@
             </build>
         </profile>
     </profiles>
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo1.maven.org/maven2</url>
-        </repository>
-    </repositories>
 </project>
