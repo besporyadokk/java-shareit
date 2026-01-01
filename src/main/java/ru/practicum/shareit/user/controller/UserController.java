@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.service.UserService;
+import ru.practicum.shareit.user.service.UserServiceImpl;
 
 import java.util.List;
 
@@ -12,32 +12,32 @@ import java.util.List;
 @RequestMapping(path = "/users")
 @RequiredArgsConstructor
 public class UserController {
-    private final UserService userService;
+    private final UserServiceImpl userServiceImpl;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto create(@RequestBody UserDto userDto) {
-        return userService.create(userDto);
+        return userServiceImpl.create(userDto);
     }
 
     @PatchMapping("/{id}")
     public UserDto update(@PathVariable int id, @RequestBody UserDto userDto) {
-        return userService.update(id, userDto);
+        return userServiceImpl.update(id, userDto);
     }
 
     @GetMapping("/{id}")
     public UserDto getById(@PathVariable int id) {
-        return userService.getById(id);
+        return userServiceImpl.getById(id);
     }
 
     @GetMapping
     public List<UserDto> getAll() {
-        return userService.getAll();
+        return userServiceImpl.getAll();
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable int id) {
-        userService.delete(id);
+        userServiceImpl.delete(id);
     }
 }

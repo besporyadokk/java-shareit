@@ -17,4 +17,6 @@ public interface UserStorage {
     void deleteById(int id);
 
     boolean existsById(int id);
+
+    Optional<User> findByEmail(String email);
 }
