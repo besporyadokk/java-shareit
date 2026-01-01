@@ -4,27 +4,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.item.service.ItemServiceImpl;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
-/**
- * TODO Sprint add-controllers.
- */
+
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
 public class ItemController {
-    private final ItemService itemService;
+    private final ItemServiceImpl itemServiceImpl;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ItemDto create(
             @RequestBody ItemDto itemDto,
             @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        return itemService.createItem(itemDto, ownerId);
+        return itemServiceImpl.createItem(itemDto, ownerId);
     }
 
     @PatchMapping("/{itemId}")
@@ -32,24 +30,24 @@ public class ItemController {
             @PathVariable int itemId,
             @RequestBody ItemDto updateDto,
             @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        return itemService.updateItem(itemId, updateDto, ownerId);
+        return itemServiceImpl.updateItem(itemId, updateDto, ownerId);
     }
 
     @GetMapping("/{itemId}")
     public ItemDto getById(@PathVariable int itemId) {
-        return itemService.getItemById(itemId);
+        return itemServiceImpl.getItemById(itemId);
     }
 
     @GetMapping
     public List<ItemDto> getAllByOwner(
             @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        return itemService.getAllItemsByOwner(ownerId);
+        return itemServiceImpl.getAllItemsByOwner(ownerId);
     }
 
     @GetMapping("/search")
     public List<ItemDto> search(
             @RequestParam String text) {
-        return itemService.searchAvailableItems(text);
+        return itemServiceImpl.searchAvailableItems(text);
     }
 
     @DeleteMapping("/{itemId}")
@@ -57,6 +55,6 @@ public class ItemController {
     public void delete(
             @PathVariable int itemId,
             @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        itemService.deleteItem(itemId, ownerId);
+        itemServiceImpl.deleteItem(itemId, ownerId);
     }
 }

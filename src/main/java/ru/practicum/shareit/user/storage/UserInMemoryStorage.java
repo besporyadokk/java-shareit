@@ -1,10 +1,10 @@
 package ru.practicum.shareit.user.storage;
 
 
+import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
-import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserInMemoryStorage implements UserStorage {
@@ -47,6 +47,17 @@ public class UserInMemoryStorage implements UserStorage {
     @Override
     public boolean existsById(int id) {
         return users.containsKey(id);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        if (email == null) {
+            return Optional.empty();
+        }
+
+        return users.values().stream()
+                .filter(user -> email.equals(user.getEmail()))
+                .findFirst();
     }
 
 }
