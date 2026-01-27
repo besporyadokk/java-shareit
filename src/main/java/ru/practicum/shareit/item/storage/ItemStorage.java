@@ -8,15 +8,15 @@ import java.util.Optional;
 public interface ItemStorage {
     Item create(Item item);
 
-    Optional<Item> findById(int id);
+    Optional<Item> findById(Integer id);
 
     List<Item> findAll();
 
-    List<Item> findByOwnerId(int ownerId);
+    List<Item> findByOwnerId(Integer ownerId);
 
     List<Item> searchAvailableItems(String text);
 
     Item update(Item item);
 
-    void deleteById(int id);
+    void deleteById(Integer id);
 }

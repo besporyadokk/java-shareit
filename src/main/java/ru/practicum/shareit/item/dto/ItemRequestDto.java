@@ -13,7 +13,7 @@ import ru.practicum.shareit.user.model.User;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ItemDto {
+public class ItemRequestDto {
     private Integer id;
     @NotBlank(message = "Название не может быть пустым")
     private String name;

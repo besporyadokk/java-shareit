@@ -1,15 +1,14 @@
 package ru.practicum.shareit.user.storage;
 
 
-import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
 
-@Repository
+
 public class UserInMemoryStorage implements UserStorage {
     private final Map<Integer, User> users = new HashMap<>();
-    private int nextId = 1;
+    private Integer nextId = 1;
 
     @Override
     public User create(User user) {
@@ -21,7 +20,7 @@ public class UserInMemoryStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> findById(int id) {
+    public Optional<User> findById(Integer id) {
         return Optional.ofNullable(users.get(id));
     }
 
@@ -40,12 +39,12 @@ public class UserInMemoryStorage implements UserStorage {
     }
 
     @Override
-    public void deleteById(int id) {
+    public void deleteById(Integer id) {
         users.remove(id);
     }
 
     @Override
-    public boolean existsById(int id) {
+    public boolean existsById(Integer id) {
         return users.containsKey(id);
     }
 
