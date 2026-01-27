@@ -26,7 +26,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserDto getById(@PathVariable int id) {
+    public UserDto getById(@PathVariable Integer id) {
         return userServiceImpl.getById(id);
     }
 
@@ -37,7 +37,7 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable int id) {
+    public void delete(@PathVariable Integer id) {
         userServiceImpl.delete(id);
     }
 }

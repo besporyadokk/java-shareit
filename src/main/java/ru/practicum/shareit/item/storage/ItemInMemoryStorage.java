@@ -3,18 +3,12 @@ package ru.practicum.shareit.item.storage;
 
 import ru.practicum.shareit.item.model.Item;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Repository;
 
-@Repository
 public class ItemInMemoryStorage implements ItemStorage {
     private final Map<Integer, Item> items = new HashMap<>();
-    private int idCounter = 1;
+    private Integer idCounter = 1;
 
     @Override
     public Item create(Item item) {
@@ -26,7 +20,7 @@ public class ItemInMemoryStorage implements ItemStorage {
     }
 
     @Override
-    public Optional<Item> findById(int id) {
+    public Optional<Item> findById(Integer id) {
         return Optional.ofNullable(items.get(id));
     }
 
@@ -36,9 +30,9 @@ public class ItemInMemoryStorage implements ItemStorage {
     }
 
     @Override
-    public List<Item> findByOwnerId(int ownerId) {
+    public List<Item> findByOwnerId(Integer ownerId) {
         return items.values().stream()
-                .filter(item -> item.getOwner().getId() == ownerId)
+                .filter(item -> item.getOwner().getId().equals(ownerId))
                 .collect(Collectors.toList());
     }
 
@@ -69,7 +63,7 @@ public class ItemInMemoryStorage implements ItemStorage {
     }
 
     @Override
-    public void deleteById(int id) {
+    public void deleteById(Integer id) {
         items.remove(id);
     }
 }

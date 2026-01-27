@@ -8,15 +8,15 @@ import java.util.Optional;
 public interface UserStorage {
     User create(User user);
 
-    Optional<User> findById(int id);
+    Optional<User> findById(Integer id);
 
     List<User> findAll();
 
     User update(User user);
 
-    void deleteById(int id);
+    void deleteById(Integer id);
 
-    boolean existsById(int id);
+    boolean existsById(Integer id);
 
     Optional<User> findByEmail(String email);
 }
