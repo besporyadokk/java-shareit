@@ -1,113 +1,72 @@
 package ru.practicum.shareit.item.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.exception.AccessDeniedException;
-import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.*;
-import ru.practicum.shareit.item.mapper.CommentMapper;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
-import ru.practicum.shareit.item.storage.CommentRepository;
-import ru.practicum.shareit.item.storage.ItemRepository;
+import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
 public class ItemController {
-    private final ItemServiceImpl itemServiceImpl;
-    private final ItemRepository itemStorage;
-    private final CommentRepository commentRepository;
+    private final ItemService itemService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ItemResponseDto create(
-            @RequestBody ItemRequestDto itemDto,
-            @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
-        return itemServiceImpl.createItem(itemDto, ownerId);
+    public ResponseEntity<ItemResponseDto> createItem(@RequestBody ItemRequestDto itemDto,
+                                                      @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
+        ItemResponseDto createdItem = itemService.createItem(itemDto, ownerId);
+        return ResponseEntity.ok(createdItem);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemResponseDto update(
-            @PathVariable Integer itemId,
-            @RequestBody ItemRequestDto updateDto,
-            @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
-        return itemServiceImpl.updateItem(itemId, updateDto, ownerId);
+    public ResponseEntity<ItemResponseDto> updateItem(@PathVariable Integer itemId,
+                                                      @RequestBody ItemRequestDto updateDto,
+                                                      @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
+        ItemResponseDto updatedItem = itemService.updateItem(itemId, updateDto, ownerId);
+        return ResponseEntity.ok(updatedItem);
     }
 
     @GetMapping("/{itemId}")
-    public ItemOwnerDto getById(
-            @PathVariable Integer itemId,
-            @RequestHeader(value = "X-Sharer-User-Id", required = false) Integer userId) {
+    public ResponseEntity<ItemOwnerDto> getItemByIdForOwner(@PathVariable Integer itemId,
+                                                            @RequestHeader("X-Sharer-User-Id") Integer userId) {
+        ItemOwnerDto item = itemService.getItemByIdForOwner(itemId, userId);
+        return ResponseEntity.ok(item);
+    }
 
-        Item item = itemStorage.findById(itemId)
-                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
-
-        if (userId != null) {
-            try {
-                // Пробуем получить для владельца
-                return itemServiceImpl.getItemByIdForOwner(itemId, userId);
-            } catch (AccessDeniedException e) {
-                // Если не владелец - возвращаем ItemOwnerDto с null для бронирований
-                return ItemOwnerDto.builder()
-                        .id(item.getId())
-                        .name(item.getName())
-                        .description(item.getDescription())
-                        .available(item.getAvailable())
-                        .lastBooking(null)
-                        .nextBooking(null)
-                        .comments(commentRepository.findByItemId(itemId).stream()
-                                .map(CommentMapper::toDto)
-                                .collect(Collectors.toList()))
-                        .build();
-            }
-        }
-
-        // Для неавторизованных пользователей или если userId не передан
-        return ItemOwnerDto.builder()
-                .id(item.getId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .available(item.getAvailable())
-                .lastBooking(null)
-                .nextBooking(null)
-                .comments(commentRepository.findByItemId(itemId).stream()
-                        .map(CommentMapper::toDto)
-                        .collect(Collectors.toList()))
-                .build();
+    @GetMapping("/simple/{itemId}")
+    public ResponseEntity<ItemResponseDto> getItemById(@PathVariable Integer itemId) {
+        ItemResponseDto item = itemService.getItemById(itemId);
+        return ResponseEntity.ok(item);
     }
 
     @GetMapping
-    public List<ItemOwnerDto> getAllByOwner(
-            @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
-        return itemServiceImpl.getAllItemsByOwner(ownerId);
+    public ResponseEntity<List<ItemOwnerDto>> getAllItemsByOwner(@RequestHeader("X-Sharer-User-Id") Integer ownerId) {
+        List<ItemOwnerDto> items = itemService.getAllItemsByOwner(ownerId);
+        return ResponseEntity.ok(items);
     }
 
     @GetMapping("/search")
-    public List<ItemResponseDto> search(
-            @RequestParam String text,
-            @RequestHeader("X-Sharer-User-Id") Integer userId) {
-        return itemServiceImpl.searchAvailableItems(text, userId);
+    public ResponseEntity<List<ItemResponseDto>> searchItems(@RequestParam String text,
+                                                             @RequestHeader("X-Sharer-User-Id") Integer userId) {
+        List<ItemResponseDto> items = itemService.searchAvailableItems(text, userId);
+        return ResponseEntity.ok(items);
     }
 
     @DeleteMapping("/{itemId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-            @PathVariable Integer itemId,
-            @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
-        itemServiceImpl.deleteItem(itemId, ownerId);
+    public ResponseEntity<Void> deleteItem(@PathVariable Integer itemId,
+                                           @RequestHeader("X-Sharer-User-Id") Integer ownerId) {
+        itemService.deleteItem(itemId, ownerId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{itemId}/comment")
-    @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto addComment(
-            @PathVariable Integer itemId,
-            @RequestHeader("X-Sharer-User-Id") Integer userId,
-            @RequestBody CommentRequestDto commentRequestDto) {
-        return itemServiceImpl.addComment(itemId, userId, commentRequestDto);
+    public ResponseEntity<CommentDto> addComment(@PathVariable Integer itemId,
+                                                 @RequestBody CommentRequestDto commentRequestDto,
+                                                 @RequestHeader("X-Sharer-User-Id") Integer userId) {
+        CommentDto comment = itemService.addComment(itemId, userId, commentRequestDto);
+        return ResponseEntity.ok(comment);
     }
 }
