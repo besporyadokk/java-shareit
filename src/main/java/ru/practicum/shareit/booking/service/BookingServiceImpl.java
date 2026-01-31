@@ -253,8 +253,5 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("Параметр 'size' должен быть положительным");
         }
 
-        if (size == 0) {
-            throw new ValidationException("Параметр 'size' не может быть нулевым");
-        }
     }
 }
