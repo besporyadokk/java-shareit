@@ -22,10 +22,12 @@ import ru.practicum.shareit.item.storage.CommentRepository;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -85,9 +87,9 @@ public class ItemServiceImpl implements ItemService {
         LocalDateTime now = LocalDateTime.now();
 
         List<Booking> lastBookings = bookingRepository.findLastBookingForItem(
-                itemId, BookingStatus.APPROVED, now, org.springframework.data.domain.PageRequest.of(0, 1));
+                itemId, BookingStatus.APPROVED, now, PageRequest.of(0, 1));
         List<Booking> nextBookings = bookingRepository.findNextBookingForItem(
-                itemId, BookingStatus.APPROVED, now, org.springframework.data.domain.PageRequest.of(0, 1));
+                itemId, BookingStatus.APPROVED, now, PageRequest.of(0, 1));
 
         BookingForItemDto lastBookingDto = lastBookings.isEmpty() ? null :
                 BookingMapper.toBookingForItemDto(lastBookings.get(0));
@@ -128,21 +130,30 @@ public class ItemServiceImpl implements ItemService {
         LocalDateTime now = LocalDateTime.now();
         List<Item> items = itemRepository.findByOwnerId(ownerId);
 
+        List<Integer> itemIds = items.stream()
+                .map(Item::getId)
+                .collect(Collectors.toList());
+
+        List<Comment> allComments = commentRepository.findByItemIds(itemIds);
+
+        Map<Integer, List<CommentDto>> commentsByItemId = allComments.stream()
+                .collect(Collectors.groupingBy(
+                        comment -> comment.getItem().getId(),
+                        Collectors.mapping(CommentMapper::toDto, Collectors.toList())
+                ));
+
         return items.stream().map(item -> {
             List<Booking> lastBookings = bookingRepository.findLastBookingForItem(
-                    item.getId(), BookingStatus.APPROVED, now, org.springframework.data.domain.PageRequest.of(0, 1));
+                    item.getId(), BookingStatus.APPROVED, now, PageRequest.of(0, 1));
             List<Booking> nextBookings = bookingRepository.findNextBookingForItem(
-                    item.getId(), BookingStatus.APPROVED, now, org.springframework.data.domain.PageRequest.of(0, 1));
+                    item.getId(), BookingStatus.APPROVED, now, PageRequest.of(0, 1));
 
             BookingForItemDto lastBookingDto = lastBookings.isEmpty() ? null :
                     BookingMapper.toBookingForItemDto(lastBookings.get(0));
             BookingForItemDto nextBookingDto = nextBookings.isEmpty() ? null :
                     BookingMapper.toBookingForItemDto(nextBookings.get(0));
 
-            List<Comment> comments = commentRepository.findByItemId(item.getId());
-            List<CommentDto> commentDtos = comments.stream()
-                    .map(CommentMapper::toDto)
-                    .collect(Collectors.toList());
+            List<CommentDto> commentDtos = commentsByItemId.getOrDefault(item.getId(), Collections.emptyList());
 
             return ItemDtoMapper.toOwnerDto(item, lastBookingDto, nextBookingDto, commentDtos);
         }).collect(Collectors.toList());
@@ -157,12 +168,20 @@ public class ItemServiceImpl implements ItemService {
         List<Item> items = itemRepository.searchAvailableItems(text.toLowerCase());
         log.info("Найдено {} доступных вещей по запросу '{}'", items.size(), text);
 
-        return items.stream().map(item -> {
-            List<Comment> comments = commentRepository.findByItemId(item.getId());
-            List<CommentDto> commentDtos = comments.stream()
-                    .map(CommentMapper::toDto)
-                    .collect(Collectors.toList());
+        List<Integer> itemIds = items.stream()
+                .map(Item::getId)
+                .collect(Collectors.toList());
 
+        List<Comment> allComments = commentRepository.findByItemIds(itemIds);
+
+        Map<Integer, List<CommentDto>> commentsByItemId = allComments.stream()
+                .collect(Collectors.groupingBy(
+                        comment -> comment.getItem().getId(),
+                        Collectors.mapping(CommentMapper::toDto, Collectors.toList())
+                ));
+
+        return items.stream().map(item -> {
+            List<CommentDto> commentDtos = commentsByItemId.getOrDefault(item.getId(), Collections.emptyList());
             return ItemDtoMapper.toResponseDto(item, commentDtos);
         }).collect(Collectors.toList());
     }

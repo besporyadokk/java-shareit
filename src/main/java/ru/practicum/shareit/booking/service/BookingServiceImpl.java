@@ -37,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
+    private final BookingValidator bookingValidator;
 
     @Override
     @Transactional
@@ -47,7 +48,7 @@ public class BookingServiceImpl implements BookingService {
         Item item = itemRepository.findById(bookingRequestDto.getItemId())
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
-        BookingValidator.validateBookingForCreation(bookingRequestDto, bookerId, item.getOwner().getId());
+        bookingValidator.validateBookingForCreation(bookingRequestDto, bookerId, item.getOwner().getId());
 
         if (!item.getAvailable()) {
             log.warn("Вещь с id {} недоступна для бронирования", item.getId());

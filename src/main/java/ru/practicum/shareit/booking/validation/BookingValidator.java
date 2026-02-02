@@ -1,13 +1,15 @@
 package ru.practicum.shareit.booking.validation;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.exception.ValidationException;
 
 import java.time.LocalDateTime;
 
+@Component
 public class BookingValidator {
 
-    public static void validateBookingDates(BookingRequestDto bookingRequestDto) {
+    public void validateBookingDates(BookingRequestDto bookingRequestDto) {
         LocalDateTime start = bookingRequestDto.getStart();
         LocalDateTime end = bookingRequestDto.getEnd();
         LocalDateTime now = LocalDateTime.now();
@@ -37,7 +39,7 @@ public class BookingValidator {
         }
     }
 
-    public static void validateBookingForCreation(BookingRequestDto bookingRequestDto,
+    public void validateBookingForCreation(BookingRequestDto bookingRequestDto,
                                                   int bookerId,
                                                   int itemOwnerId) {
         validateBookingDates(bookingRequestDto);
