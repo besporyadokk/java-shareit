@@ -37,4 +37,11 @@ public class ErrorHandler {
         log.error("Internal Server Error: {}", e.getMessage(), e);
         return new ErrorResponse("Внутренняя ошибка сервера");
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleAccessDenied(AccessDeniedException e) {
+        log.error("AccessDeniedException: {}", e.getMessage());
+        return new ErrorResponse(e.getMessage());
+    }
 }

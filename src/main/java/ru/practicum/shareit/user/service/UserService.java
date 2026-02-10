@@ -7,13 +7,13 @@ import java.util.List;
 public interface UserService {
     UserDto create(UserDto userDto);
 
-    UserDto update(int id, UserDto userDto);
+    UserDto update(Integer id, UserDto userDto);
 
-    UserDto getById(int id);
+    UserDto getById(Integer id);
 
     List<UserDto> getAll();
 
-    void delete(int id);
+    void delete(Integer id);
 
     void validateUserFields(UserDto userDto);
 

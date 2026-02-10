@@ -8,7 +8,7 @@ import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserDtoMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final UserStorage userStorage;
+    private final UserRepository userStorage;
 
     @Override
     public UserDto create(UserDto userDto) {
@@ -26,12 +26,12 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
-        User createdUser = userStorage.create(user);
+        User createdUser = userStorage.save(user);
         return UserDtoMapper.toUserDto(createdUser);
     }
 
     @Override
-    public UserDto update(int id, UserDto userDto) {
+    public UserDto update(Integer id, UserDto userDto) {
         User existingUser = userStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден"));
 
@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
             existingUser.setName(userDto.getName());
         }
 
-        User updatedUser = userStorage.update(existingUser);
+        User updatedUser = userStorage.save(existingUser);
         if (updatedUser == null) {
             throw new NotFoundException("Ошибка при обновлении пользователя с id=" + id);
         }
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getById(int id) {
+    public UserDto getById(Integer id) {
         User user = userStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден"));
         return UserDtoMapper.toUserDto(user);
@@ -73,7 +73,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(int id) {
+    public void delete(Integer id) {
         if (!userStorage.existsById(id)) {
             throw new NotFoundException("Пользователь с id=" + id + " не найден");
         }
