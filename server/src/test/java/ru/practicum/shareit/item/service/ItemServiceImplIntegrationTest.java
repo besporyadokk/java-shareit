@@ -7,13 +7,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import ru.practicum.shareit.booking.dto.BookingRequestDto;
+import ru.practicum.shareit.booking.model.BookingResponseStatus;
+import ru.practicum.shareit.booking.service.BookingServiceImpl;
+import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.CommentRequestDto;
 import ru.practicum.shareit.item.dto.ItemRequestDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
+import ru.practicum.shareit.item.storage.CommentRepository;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.dto.UserResponseDto;
 import ru.practicum.shareit.user.service.UserServiceImpl;
+import ru.practicum.shareit.user.storage.UserRepository;
+
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,7 +38,19 @@ class ItemServiceImplIntegrationTest {
     private UserServiceImpl userService;
 
     @Autowired
+    private BookingServiceImpl bookingService;
+
+    @Autowired
     private ItemRepository itemRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
 
     private Integer ownerId;
     private Integer bookerId;
@@ -38,7 +58,11 @@ class ItemServiceImplIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Очищаем все репозитории
+        commentRepository.deleteAll();
+        bookingRepository.deleteAll();
         itemRepository.deleteAll();
+        userRepository.deleteAll();
 
         // Создаем владельца
         UserResponseDto owner = new UserResponseDto();
@@ -144,6 +168,7 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Поиск доступных вещей")
     void searchAvailableItems_Success() {
+        // Создаем 2 вещи
         itemService.createItem(createTestItemDto(), ownerId);
         itemService.createItem(createTestItemDto(), ownerId);
 
@@ -165,6 +190,7 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Получение всех вещей владельца")
     void getAllItemsByOwner_Success() {
+        // Создаем 2 вещи
         itemService.createItem(createTestItemDto(), ownerId);
         itemService.createItem(createTestItemDto(), ownerId);
 
@@ -176,12 +202,22 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Добавление комментария")
     void addComment_Success() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
+        // Создаем бронирование с прошлыми датами
+        BookingRequestDto bookingDto = BookingRequestDto.builder()
+                .itemId(itemId)
+                .start(LocalDateTime.now().minusDays(5))
+                .end(LocalDateTime.now().minusDays(1))
+                .build();
+        var booking = bookingService.createBooking(bookingDto, bookerId);
 
+        // Подтверждаем бронирование
+        bookingService.approveBooking(booking.getId(), true, ownerId);
+
+        // Добавляем комментарий
         CommentRequestDto commentDto = new CommentRequestDto();
         commentDto.setText("Great item!");
 
-        var comment = itemService.addComment(savedItem.getId(), bookerId, commentDto);
+        var comment = itemService.addComment(itemId, bookerId, commentDto);
 
         assertThat(comment).isNotNull();
         assertThat(comment.getText()).isEqualTo("Great item!");
@@ -190,12 +226,10 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Добавление комментария без бронирования")
     void addComment_NoBooking_ThrowsException() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
-
         CommentRequestDto commentDto = new CommentRequestDto();
         commentDto.setText("Great item!");
 
         assertThrows(Exception.class,
-                () -> itemService.addComment(savedItem.getId(), 999, commentDto));
+                () -> itemService.addComment(itemId, bookerId, commentDto));
     }
 }
