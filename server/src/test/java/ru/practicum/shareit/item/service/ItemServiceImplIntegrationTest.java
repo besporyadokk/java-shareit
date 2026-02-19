@@ -53,7 +53,6 @@ class ItemServiceImplIntegrationTest {
 
     private Integer ownerId;
     private Integer bookerId;
-    private Integer itemId;
 
     @BeforeEach
     void setUp() {
@@ -74,20 +73,12 @@ class ItemServiceImplIntegrationTest {
         booker.setName("Booker");
         booker.setEmail("booker@example.com");
         bookerId = userService.create(booker).getId();
-
-        // Создаем вещь
-        ItemRequestDto itemDto = ItemRequestDto.builder()
-                .name("Test Item")
-                .description("Test Description")
-                .available(true)
-                .build();
-        itemId = itemService.createItem(itemDto, ownerId).getId();
     }
 
-    private ItemRequestDto createTestItemDto() {
+    private ItemRequestDto createTestItemDto(String name, String description) {
         return ItemRequestDto.builder()
-                .name("Test Item")
-                .description("Test Description")
+                .name(name)
+                .description(description)
                 .available(true)
                 .build();
     }
@@ -95,7 +86,7 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Создание вещи")
     void createItem_Success() {
-        ItemRequestDto itemDto = createTestItemDto();
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
         ItemResponseDto savedItem = itemService.createItem(itemDto, ownerId);
 
         assertThat(savedItem).isNotNull();
@@ -108,11 +99,14 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Получение вещи по ID")
     void getItemById_Success() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        ItemResponseDto savedItem = itemService.createItem(itemDto, ownerId);
+
         ItemResponseDto retrievedItem = itemService.getItemById(savedItem.getId());
 
         assertThat(retrievedItem).isNotNull();
         assertThat(retrievedItem.getId()).isEqualTo(savedItem.getId());
+        assertThat(retrievedItem.getName()).isEqualTo("Test Item");
     }
 
     @Test
@@ -125,7 +119,8 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Обновление вещи")
     void updateItem_Success() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        ItemResponseDto savedItem = itemService.createItem(itemDto, ownerId);
 
         ItemRequestDto updateDto = ItemRequestDto.builder()
                 .name("Updated Item")
@@ -144,7 +139,8 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Обновление вещи не владельцем")
     void updateItem_NotOwner_ThrowsException() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        ItemResponseDto savedItem = itemService.createItem(itemDto, ownerId);
 
         ItemRequestDto updateDto = ItemRequestDto.builder()
                 .name("Updated Item")
@@ -157,7 +153,9 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Удаление вещи")
     void deleteItem_Success() {
-        ItemResponseDto savedItem = itemService.createItem(createTestItemDto(), ownerId);
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        ItemResponseDto savedItem = itemService.createItem(itemDto, ownerId);
+
         itemService.deleteItem(savedItem.getId(), ownerId);
 
         assertThrows(NotFoundException.class,
@@ -167,19 +165,24 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Поиск доступных вещей")
     void searchAvailableItems_Success() {
-        // Создаем 2 вещи
-        itemService.createItem(createTestItemDto(), ownerId);
-        itemService.createItem(createTestItemDto(), ownerId);
+        // Создаем вещи с уникальными названиями
+        itemService.createItem(createTestItemDto("Drill", "Powerful drill"), ownerId);
+        itemService.createItem(createTestItemDto("Hammer", "Heavy hammer"), ownerId);
+        itemService.createItem(createTestItemDto("Screwdriver", "Small screwdriver"), ownerId);
 
-        var results = itemService.searchAvailableItems("Item", 1);
+        // Ищем по слову "Drill" - должна найтись только 1 вещь
+        var results = itemService.searchAvailableItems("Drill", 1);
+        assertThat(results).hasSize(1);
 
-        assertThat(results).hasSize(2);
+        // Ищем по слову "Item" - должны найтись все 3
+        results = itemService.searchAvailableItems("Item", 1);
+        assertThat(results).hasSize(3);
     }
 
     @Test
     @DisplayName("Поиск с пустым текстом")
     void searchAvailableItems_EmptyText_ReturnsEmptyList() {
-        itemService.createItem(createTestItemDto(), ownerId);
+        itemService.createItem(createTestItemDto("Test Item", "Test Description"), ownerId);
 
         var results = itemService.searchAvailableItems("", 1);
 
@@ -189,23 +192,30 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Получение всех вещей владельца")
     void getAllItemsByOwner_Success() {
-        // Создаем 2 вещи
-        itemService.createItem(createTestItemDto(), ownerId);
-        itemService.createItem(createTestItemDto(), ownerId);
+        // Создаем 3 вещи для владельца
+        itemService.createItem(createTestItemDto("Item 1", "Description 1"), ownerId);
+        itemService.createItem(createTestItemDto("Item 2", "Description 2"), ownerId);
+        itemService.createItem(createTestItemDto("Item 3", "Description 3"), ownerId);
 
         var items = itemService.getAllItemsByOwner(ownerId);
 
-        assertThat(items).hasSize(2);
+        assertThat(items).hasSize(3);
+        assertThat(items).allMatch(item -> item.getName().startsWith("Item"));
     }
 
     @Test
     @DisplayName("Добавление комментария")
     void addComment_Success() {
+        // Создаем вещь
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        Integer itemId = itemService.createItem(itemDto, ownerId).getId();
+
         // Создаем бронирование с прошлыми датами
+        LocalDateTime now = LocalDateTime.now();
         BookingRequestDto bookingDto = BookingRequestDto.builder()
                 .itemId(itemId)
-                .start(LocalDateTime.now().minusDays(5))
-                .end(LocalDateTime.now().minusDays(1))
+                .start(now.minusDays(5))
+                .end(now.minusDays(1))
                 .build();
         var booking = bookingService.createBooking(bookingDto, bookerId);
 
@@ -220,11 +230,16 @@ class ItemServiceImplIntegrationTest {
 
         assertThat(comment).isNotNull();
         assertThat(comment.getText()).isEqualTo("Great item!");
+        assertThat(comment.getAuthorName()).isEqualTo("Booker");
     }
 
     @Test
     @DisplayName("Добавление комментария без бронирования")
     void addComment_NoBooking_ThrowsException() {
+        // Создаем вещь
+        ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
+        Integer itemId = itemService.createItem(itemDto, ownerId).getId();
+
         CommentRequestDto commentDto = new CommentRequestDto();
         commentDto.setText("Great item!");
 
