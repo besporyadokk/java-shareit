@@ -7,7 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import ru.practicum.shareit.booking.dto.BookingRequestDto;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingResponseStatus;
 import ru.practicum.shareit.booking.service.BookingServiceImpl;
 import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -201,26 +202,21 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     @DisplayName("Добавление комментария")
-    void addComment_Success() throws Exception {
+    void addComment_Success() {
         // Создаем вещь
         ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
         Integer itemId = itemService.createItem(itemDto, ownerId).getId();
 
-        // Создаем бронирование с датами в прошлом (но не слишком далеко)
-        LocalDateTime now = LocalDateTime.now();
-        BookingRequestDto bookingDto = BookingRequestDto.builder()
-                .itemId(itemId)
-                .start(now.minusDays(2))
-                .end(now.minusDays(1))
+        // Создаем бронирование напрямую через репозиторий (обходим валидатор)
+        Booking booking = Booking.builder()
+                .start(LocalDateTime.now().minusDays(5))
+                .end(LocalDateTime.now().minusDays(1))
+                .item(itemRepository.findById(itemId).get())
+                .booker(userRepository.findById(bookerId).get())
+                .status(BookingResponseStatus.APPROVED)
                 .build();
 
-        var booking = bookingService.createBooking(bookingDto, bookerId);
-
-        // Подтверждаем бронирование
-        bookingService.approveBooking(booking.getId(), true, ownerId);
-
-        // Ждем немного, чтобы бронирование точно закончилось
-        Thread.sleep(100);
+        bookingRepository.save(booking);
 
         // Добавляем комментарий
         CommentRequestDto commentDto = new CommentRequestDto();
