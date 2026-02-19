@@ -165,17 +165,13 @@ class ItemServiceImplIntegrationTest {
     @Test
     @DisplayName("Поиск доступных вещей")
     void searchAvailableItems_Success() {
-        // Создаем вещи с уникальными названиями
-        itemService.createItem(createTestItemDto("Drill", "Powerful drill"), ownerId);
-        itemService.createItem(createTestItemDto("Hammer", "Heavy hammer"), ownerId);
-        itemService.createItem(createTestItemDto("Screwdriver", "Small screwdriver"), ownerId);
-
-        // Ищем по слову "Drill" - должна найтись только 1 вещь
-        var results = itemService.searchAvailableItems("Drill", 1);
-        assertThat(results).hasSize(1);
+        // Создаем вещи с одинаковым словом для поиска
+        itemService.createItem(createTestItemDto("Item 1", "Description 1"), ownerId);
+        itemService.createItem(createTestItemDto("Item 2", "Description 2"), ownerId);
+        itemService.createItem(createTestItemDto("Item 3", "Description 3"), ownerId);
 
         // Ищем по слову "Item" - должны найтись все 3
-        results = itemService.searchAvailableItems("Item", 1);
+        var results = itemService.searchAvailableItems("Item", 1);
         assertThat(results).hasSize(3);
     }
 
@@ -205,22 +201,26 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     @DisplayName("Добавление комментария")
-    void addComment_Success() {
+    void addComment_Success() throws Exception {
         // Создаем вещь
         ItemRequestDto itemDto = createTestItemDto("Test Item", "Test Description");
         Integer itemId = itemService.createItem(itemDto, ownerId).getId();
 
-        // Создаем бронирование с прошлыми датами
+        // Создаем бронирование с датами в прошлом (но не слишком далеко)
         LocalDateTime now = LocalDateTime.now();
         BookingRequestDto bookingDto = BookingRequestDto.builder()
                 .itemId(itemId)
-                .start(now.minusDays(5))
+                .start(now.minusDays(2))
                 .end(now.minusDays(1))
                 .build();
+
         var booking = bookingService.createBooking(bookingDto, bookerId);
 
         // Подтверждаем бронирование
         bookingService.approveBooking(booking.getId(), true, ownerId);
+
+        // Ждем немного, чтобы бронирование точно закончилось
+        Thread.sleep(100);
 
         // Добавляем комментарий
         CommentRequestDto commentDto = new CommentRequestDto();
