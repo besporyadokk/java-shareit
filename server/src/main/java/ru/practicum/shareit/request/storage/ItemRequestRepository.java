@@ -24,4 +24,5 @@ public interface ItemRequestRepository extends JpaRepository<ItemRequest, Intege
             "LEFT JOIN FETCH ir.items " +
             "WHERE ir.id = :requestId")
     ItemRequest findByIdWithRequesterAndItems(@Param("requestId") Integer requestId);
+
 }

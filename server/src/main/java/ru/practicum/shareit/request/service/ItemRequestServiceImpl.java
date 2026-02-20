@@ -22,6 +22,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -61,15 +62,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         List<ItemRequest> itemRequests = itemRequestRepository.findByRequesterIdOrderByCreatedDesc(requesterId);
 
-        return itemRequests.stream()
-                .map(itemRequest -> {
-                    List<Item> items = itemRepository.findByRequestId(itemRequest.getId());
-                    List<ItemResponseForRequestDto> itemDtos = items.stream()
-                            .map(ItemRequestMapper::toItemResponseForRequestDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toDto(itemRequest, itemDtos);
-                })
-                .collect(Collectors.toList());
+        return convertToDtoList(itemRequests);
     }
 
     @Override
@@ -82,15 +75,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         Pageable pageable = PageRequest.of(from / size, size);
         List<ItemRequest> itemRequests = itemRequestRepository.findAllByRequesterIdNot(userId, pageable);
 
-        return itemRequests.stream()
-                .map(itemRequest -> {
-                    List<Item> items = itemRepository.findByRequestId(itemRequest.getId());
-                    List<ItemResponseForRequestDto> itemDtos = items.stream()
-                            .map(ItemRequestMapper::toItemResponseForRequestDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toDto(itemRequest, itemDtos);
-                })
-                .collect(Collectors.toList());
+        return convertToDtoList(itemRequests);
     }
 
     @Override
@@ -101,11 +86,41 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         ItemRequest itemRequest = itemRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Запрос на вещь с id=" + requestId + " не найден"));
 
-        List<Item> items = itemRepository.findByRequestId(requestId);
+        return convertToDto(itemRequest);
+    }
+
+    private List<ItemRequestDto> convertToDtoList(List<ItemRequest> itemRequests) {
+        if (itemRequests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Integer> requestIds = itemRequests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        List<Item> allItems = itemRepository.findByRequestIdIn(requestIds);
+
+        Map<Integer, List<Item>> itemsByRequestId = allItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
+
+        return itemRequests.stream()
+                .map(itemRequest -> convertToDto(itemRequest, itemsByRequestId))
+                .collect(Collectors.toList());
+    }
+
+    private ItemRequestDto convertToDto(ItemRequest itemRequest) {
+        List<Item> items = itemRepository.findByRequestId(itemRequest.getId());
         List<ItemResponseForRequestDto> itemDtos = items.stream()
                 .map(ItemRequestMapper::toItemResponseForRequestDto)
                 .collect(Collectors.toList());
+        return ItemRequestMapper.toDto(itemRequest, itemDtos);
+    }
 
+    private ItemRequestDto convertToDto(ItemRequest itemRequest, Map<Integer, List<Item>> itemsByRequestId) {
+        List<Item> items = itemsByRequestId.getOrDefault(itemRequest.getId(), Collections.emptyList());
+        List<ItemResponseForRequestDto> itemDtos = items.stream()
+                .map(ItemRequestMapper::toItemResponseForRequestDto)
+                .collect(Collectors.toList());
         return ItemRequestMapper.toDto(itemRequest, itemDtos);
     }
 

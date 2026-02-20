@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,11 +22,18 @@ class BaseClientTest {
     @Mock
     private RestTemplate restTemplate;
 
-    private BaseClient baseClient;
+    private TestBaseClient baseClient;  // Используем тестовую реализацию
+
+    // Тестовая реализация абстрактного класса
+    private static class TestBaseClient extends BaseClient {
+        public TestBaseClient(RestTemplate rest) {
+            super(rest);
+        }
+    }
 
     @BeforeEach
     void setUp() {
-        baseClient = new BaseClient(restTemplate);
+        baseClient = new TestBaseClient(restTemplate);
     }
 
     @Test
