@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Database files
+db/
+*.mv.db
+*.trace.db
+
+# Compiled files
+*.class
+*.jar
